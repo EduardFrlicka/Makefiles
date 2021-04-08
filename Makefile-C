@@ -1,0 +1,47 @@
+#AUTHOR : Eduard Frlička
+CFLAGS=-std=c11 -Wall -Wextra -pedantic -Wno-unused-parameter
+
+# Names and Directories
+BINARY_NAME=binary
+BIN=bin
+OBJ=$(BIN)/obj
+SRC=src
+
+# compiler and rm command
+CC=gcc
+RM=rm -f
+
+# initializing global variables
+BINARY_PATH=$(BIN)/$(BINARY_NAME)
+SRC_FILES=$(foreach DIR,$(SRC),$(wildcard $(DIR)/))
+
+vpath %.c $(foreach DIR,$(SRC_FILES),$(DIR):)
+vpath %.h $(foreach DIR,$(SRC_FILES),$(DIR):)
+
+SOURCES := $(foreach DIR,$(SRC_FILES),$(wildcard $(DIR)/*.c))
+SOURCES := $(notdir $(SOURCES))
+OBJECTS := $(patsubst %.c,$(OBJ)/%.o,$(SOURCES))
+
+HEADERS := $(foreach DIR,$(SRC_FILES),$(wildcard $(DIR)/*.h))
+HEADERS := $(notdir $(HEADERS))
+
+# Functions
+check_dir = @if [ ! -d $1 ]; then mkdir -p $1; fi # checks if dir exists, then creates whole path
+
+.PHONY:  all clean run
+
+all: $(BINARY_PATH) 
+
+run: $(BINARY_PATH) 
+	./$(BINARY_PATH)
+
+$(BINARY_PATH) : $(OBJECTS)
+	$(CC) $(OBJECTS) -o $@ $(CFLAGS)
+	ln -f $(BINARY_PATH) $(BINARY_NAME)
+
+$(OBJ)/%.o: %.c $(HEADERS)
+	$(call check_dir,$(OBJ))
+	$(CC) $< -c -o $@ $(CFLAGS)
+
+clean:
+	$(RM) $(OBJ)/*.o
