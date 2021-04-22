@@ -5,28 +5,30 @@
 # Names and Directories
 
 # Flags for compiling
-CFLAGS=-std=c++11 -Wall -Wextra -pedantic
+CFLAGS:=-std=c99 -Wall -Wextra -pedantic
+
+LFLAGS:=-std=c99 -Wall -Wextra -pedantic
 
 # Name of target binary file
-BINARY_NAME=binary
+BINARY_NAME:=binary
 
 # Name / Path to bin folder (for storing binary files)
-BIN=bin
+BIN:=bin
 
 # Name / Path to folder, where .o files will be stored
-OBJ=obj
+OBJ:=obj
 
 # Name / Path to folder, where source files are (.h .c .cpp ...)
-SRC=src
+SRC:=src
 
 # Compiler
-CC=gcc
+CC:=gcc
 
 # Suffix of files to compile (E.x.: c, cpp, c++)
-SUFFIX=c
+SUFFIX:=c
 
 # rm command
-RM=rm -f
+RM:=rm 
 
 
 # =========================================================================
@@ -47,13 +49,6 @@ HEADERS := $(foreach DIR,$(SRC_DIRECTORIES),$(notdir $(wildcard $(DIR)/*.h)))
 
 
 # =========================================================================
-# Functions
-
-# checks if dir exists, then creates whole path
-check_dir = @if [ ! -d $1 ]; then mkdir -p $1; echo "Created $1"; fi 
-
-
-# =========================================================================
 # Targets
 .PHONY:  all run clean cleanall source
 
@@ -66,16 +61,17 @@ run: $(BINARY_PATH)
 	./$(BINARY_PATH)
 
 $(BINARY_PATH) : $(OBJECTS)
-	$(call check_dir,$(BIN))
-	$(CC)  $(OBJECTS) -o $@ $(CFLAGS)
+	@mkdir -p $(@D)
+	$(CC) $^ -o $@ $(LFLAGS) $(INCLUDE)
 
 $(OBJ)/%.o: %.$(SUFFIX) $(HEADERS)
-	$(call check_dir,$(OBJ))
-	$(CC)  $< -c -o $@ $(CFLAGS)
+	@mkdir -p $(@D)
+	$(CC)  $< -c -o $@ $(CFLAGS) $(INCLUDE)
 
 
 source:
 	@echo "Sources: " $(SOURCES)
+	@echo "Headers: " $(HEADERS)
 	@echo "Objects: " $(OBJECTS)
 	@echo "Source_Folders: " $(SRC_DIRECTORIES)
 
@@ -86,5 +82,4 @@ clean:
 	$(RM) $(OBJ)/*.o
 
 cleanall:
-	$(RM) $(OBJ)/*.o
-	$(RM) $(BINARY_PATH)
+	$(RM) -rf $(OBJ) $(BIN)
