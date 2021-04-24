@@ -22,10 +22,10 @@ OBJ:=obj
 SRC:=src
 
 # Compiler
-CC:=gcc
+CC:=g++
 
 # Suffix of files to compile (E.x.: c, cpp, c++)
-SUFFIX:=c
+SUFFIX:=cpp
 
 # rm command
 RM:=rm 
@@ -41,7 +41,7 @@ vpath %.$(SUFFIX) $(SRC_DIRECTORIES)
 vpath %.h $(SRC_DIRECTORIES)
 
 # Adding -I 
-INCLUDE:=$(CC) $(foreach DIR, $(SRC_DIRECTORIES),-I $(DIR))
+INCLUDE:=$(foreach DIR, $(SRC_DIRECTORIES),-I $(DIR))
 
 SOURCES := $(foreach DIR,$(SRC_DIRECTORIES),$(notdir $(wildcard $(DIR)/*.$(SUFFIX))))
 OBJECTS := $(patsubst %.$(SUFFIX),$(OBJ)/%.o,$(SOURCES))

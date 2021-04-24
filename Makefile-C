@@ -41,7 +41,7 @@ vpath %.$(SUFFIX) $(SRC_DIRECTORIES)
 vpath %.h $(SRC_DIRECTORIES)
 
 # Adding -I 
-CC:=$(CC) $(foreach DIR, $(SRC_DIRECTORIES),-I $(DIR))
+INCLUDE:=$(foreach DIR, $(SRC_DIRECTORIES),-I $(DIR))
 
 SOURCES := $(foreach DIR,$(SRC_DIRECTORIES),$(notdir $(wildcard $(DIR)/*.$(SUFFIX))))
 OBJECTS := $(patsubst %.$(SUFFIX),$(OBJ)/%.o,$(SOURCES))
@@ -79,7 +79,7 @@ source:
 # =========================================================================
 # Cleaning rules
 clean:
-	$(RM) $(OBJ)/*.o
+	$(RM) -f $(OBJ)/*.o
 
 cleanall:
 	$(RM) -rf $(OBJ) $(BIN)
