@@ -5,18 +5,18 @@
 # Names and Directories
 
 # Flags for compiling
-CFLAGS:=-std=c99 -Wall -Wextra -pedantic
+CFLAGS:=-std=c99 -Wall -Wextra -pedantic -ggdb3# -Wno-unused-parameter
 
-LFLAGS:=-std=c99 -Wall -Wextra -pedantic
+LFLAGS:=
 
 # Name of target binary file
-BINARY_NAME:=binary
-
-# Name / Path to bin folder (for storing binary files)
-BIN:=bin
+BINARY_PATH:=binary
 
 # Name / Path to folder, where .o files will be stored
 OBJ:=obj
+
+# Name / Path to folder, where .dep files will be stored
+DEP:=$(OBJ)
 
 # Name / Path to folder, where source files are (.h .c .cpp ...)
 SRC:=src
@@ -33,7 +33,6 @@ RM:=rm
 
 # =========================================================================
 # initializing global variables
-BINARY_PATH=$(BIN)/$(BINARY_NAME)
 
 SRC_DIRECTORIES=$(shell find $(SRC) -type d)
 
@@ -43,14 +42,14 @@ vpath %.h $(SRC_DIRECTORIES)
 # Adding -I 
 INCLUDE:=$(foreach DIR, $(SRC_DIRECTORIES),-I $(DIR))
 
-SOURCES := $(foreach DIR,$(SRC_DIRECTORIES),$(notdir $(wildcard $(DIR)/*.$(SUFFIX))))
-OBJECTS := $(patsubst %.$(SUFFIX),$(OBJ)/%.o,$(SOURCES))
-HEADERS := $(foreach DIR,$(SRC_DIRECTORIES),$(notdir $(wildcard $(DIR)/*.h)))
+SOURCES  := $(foreach DIR,$(SRC_DIRECTORIES),$(notdir $(wildcard $(DIR)/*.$(SUFFIX))))
+OBJECTS  := $(patsubst %.$(SUFFIX),$(OBJ)/%.o,$(SOURCES))
 
 
 # =========================================================================
 # Targets
 .PHONY:  all run clean cleanall source
+.PRECIOUS: $(DEP)/%.dep
 
 
 # =========================================================================
@@ -64,14 +63,16 @@ $(BINARY_PATH) : $(OBJECTS)
 	@mkdir -p $(@D)
 	$(CC) $^ -o $@ $(LFLAGS) $(INCLUDE)
 
-$(OBJ)/%.o: %.$(SUFFIX) $(HEADERS)
+$(OBJ)/%.o: %.$(SUFFIX) $(DEP)/%.dep
 	@mkdir -p $(@D)
-	$(CC)  $< -c -o $@ $(CFLAGS) $(INCLUDE)
+	$(CC) $< -c -o $@ $(CFLAGS) $(INCLUDE)
 
+$(DEP)/%.dep: %.$(SUFFIX)
+	@mkdir -p $(@D)
+	@$(CC) -MT "$(patsubst $(DEP)/%.dep,$(OBJ)/%.o,$@) $@" -MM $< -o $@ $(INCLUDE)
 
 source:
 	@echo "Sources: " $(SOURCES)
-	@echo "Headers: " $(HEADERS)
 	@echo "Objects: " $(OBJECTS)
 	@echo "Source_Folders: " $(SRC_DIRECTORIES)
 
@@ -79,7 +80,10 @@ source:
 # =========================================================================
 # Cleaning rules
 clean:
-	$(RM) -f $(OBJ)/*.o
+	$(RM) -f $(OBJ)/*.o $(DEP)/*.dep
 
-cleanall:
-	$(RM) -rf $(OBJ) $(BIN)
+cleanall: clean
+	$(RM) -f $(BINARY_PATH)
+	$(RM) -df $(DEP) $(OBJ)
+
+-include $(wildcard $(DEP)/*.dep)
