@@ -45,6 +45,9 @@ INCLUDE:=$(foreach DIR, $(SRC_DIRECTORIES),-I $(DIR))
 SOURCES  := $(foreach DIR,$(SRC_DIRECTORIES),$(notdir $(wildcard $(DIR)/*.$(SUFFIX))))
 OBJECTS  := $(patsubst %.$(SUFFIX),$(OBJ)/%.o,$(SOURCES))
 
+ifeq ($(SOURCES),)
+$(error No source files found in directory "$(SRC)")
+endif
 
 # =========================================================================
 # Targets
