@@ -4,13 +4,11 @@
 # =========================================================================
 # Names and Directories
 
-# Flags for compiling
-CFLAGS:=-std=c++11 -Wall -Wextra -pedantic -ggdb3# -Wno-unused-parameter
-
-LFLAGS:=
-
 # Name of target binary file
 BINARY_PATH:=binary
+
+# Name / Path to folder, where source files are (.h .c .cpp ...)
+SRC:=src
 
 # Name / Path to folder, where .o files will be stored
 OBJ:=obj
@@ -18,41 +16,46 @@ OBJ:=obj
 # Name / Path to folder, where .dep files will be stored
 DEP:=$(OBJ)
 
-# Name / Path to folder, where source files are (.h .c .cpp ...)
-SRC:=src
+
+# =========================================================================
+# Commands and Flags
+
+# Flags for compiling
+CFLAGS:=-std=c99 -Wall -Wextra -pedantic -ggdb3
+
+LFLAGS:=
 
 # Compiler
 CXX:=g++
 
-# Suffix of files to compile (E.x.: c, cpp, c++)
-SUFFIX:=cpp
-
 # rm command
-RM:=rm 
+RM:=rm
 
 
 # =========================================================================
 # initializing global variables
 
 SRC_DIRECTORIES=$(shell find $(SRC) -type d)
+INCLUDE:=$(addprefix -I , $(SRC_DIRECTORIES))
 
-vpath %.$(SUFFIX) $(SRC_DIRECTORIES)
-vpath %.h $(SRC_DIRECTORIES)
+SRCS  	:= $(shell find $(SRC) -type f -name '*.cc' -or -name '*.cpp')
+OBJS  	:= $(SRCS:$(SRC)/%=$(OBJ)/%.o)
+DEPS	:= $(SRCS:$(SRC)/%=$(DEP)/%.dep)
 
-# Adding -I 
-INCLUDE:=$(foreach DIR, $(SRC_DIRECTORIES),-I $(DIR))
 
-SOURCES  := $(foreach DIR,$(SRC_DIRECTORIES),$(notdir $(wildcard $(DIR)/*.$(SUFFIX))))
-OBJECTS  := $(patsubst %.$(SUFFIX),$(OBJ)/%.o,$(SOURCES))
+vpath %.cc $(SRC)
+vpath %.cpp $(SRC)
+vpath %.h $(SRC)
 
-ifeq ($(SOURCES),)
+
+ifeq ($(SRCS),)
 $(error No source files found in directory "$(SRC)")
 endif
+
 
 # =========================================================================
 # Targets
 .PHONY:  all run clean cleanall source
-.PRECIOUS: $(DEP)/%.dep
 
 
 # =========================================================================
@@ -62,31 +65,41 @@ all: $(BINARY_PATH)
 run: $(BINARY_PATH) 
 	./$(BINARY_PATH)
 
-$(BINARY_PATH) : $(OBJECTS)
+# Linking all objects
+$(BINARY_PATH): $(OBJS)
 	@mkdir -p $(@D)
 	$(CXX) $^ -o $@ $(LFLAGS) $(INCLUDE)
 
-$(OBJ)/%.o: %.$(SUFFIX) $(DEP)/%.dep
+# Compiling object
+$(OBJ)/%.o: %
 	@mkdir -p $(@D)
 	$(CXX) $< -c -o $@ $(CFLAGS) $(INCLUDE)
 
-$(DEP)/%.dep: %.$(SUFFIX)
+# creating dep file
+$(DEP)/%.dep: %
 	@mkdir -p $(@D)
-	@$(CXX) -MT "$(patsubst $(DEP)/%.dep,$(OBJ)/%.o,$@) $@" -MM $< -o $@ $(INCLUDE)
+	@$(CXX) -MT "$(@:$(DEP)/%.dep=$(OBJ)/%.o) $@" -MM $< -o $@ $(INCLUDE)
+
 
 source:
-	@echo "Sources: " $(SOURCES)
-	@echo "Objects: " $(OBJECTS)
-	@echo "Source_Folders: " $(SRC_DIRECTORIES)
+	@echo "SRCS: " $(SRCS)
+	@echo "OBJS: " $(OBJS)
+	@echo "DEPS: " $(DEPS)
+	@echo "Source Folders: " $(SRC_DIRECTORIES)
 
 
 # =========================================================================
 # Cleaning rules
 clean:
-	$(RM) -f $(OBJ)/*.o $(DEP)/*.dep
+	$(RM) -f $(OBJS) $(DEPS)
+# removing empty directories for objects and dependency files
+	@test -d $(DEP) && find $(DEP) -empty -type d -delete || true
+	@test -d $(DEP) && echo "Directory $(DEP) is not empty" || true
+	@test -d $(OBJ) && find $(OBJ) -empty -type d -delete || true
+	@test -d $(OBJ) && echo "Directory $(OBJ) is not empty" || true
+
 
 cleanall: clean
 	$(RM) -f $(BINARY_PATH)
-	$(RM) -df $(DEP) $(OBJ)
 
--include $(wildcard $(DEP)/*.dep)
+-include $(DEPS)
